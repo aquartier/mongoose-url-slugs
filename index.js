@@ -147,7 +147,7 @@ module.exports = function(slugFields, options) {
       q._id = {$ne: doc._id};
       q[options.field] = new RegExp('^' + (slugLimited ? slug.substr(0, slug.length - 2) : slug));
       fields[options.field] = 1;
-      model.find(q, fields).exec(function(e, docs) {
+      model.findWithDeleted(q, fields).exec(function(e, docs) {
         if (e) return cb(e);
         else if (!docs.length) return cb(null, slug);
         else {
