@@ -147,28 +147,53 @@ module.exports = function(slugFields, options) {
       q._id = {$ne: doc._id};
       q[options.field] = new RegExp('^' + (slugLimited ? slug.substr(0, slug.length - 2) : slug));
       fields[options.field] = 1;
-      model.findWithDeleted(q, fields).exec(function(e, docs) {
-        if (e) return cb(e);
-        else if (!docs.length) return cb(null, slug);
-        else {
-          var max = docs.reduce(function(max, doc) {
-            var docSlug = doc.get(options.field, String);
-            var count = 1;
-            if (docSlug !== slug) {
-              count = docSlug.match(new RegExp((slugLimited ? slug.substr(0, slug.length - 2) : slug) + options.separator + '([0-9]+)$'));
-              count = ((count instanceof Array) ? parseInt(count[1]) : 0) + 1;
-            }
-            return (count > max) ? count : max;
-          }, 0);
+      if (typeof model.findWithDeleted === 'function') {
+         model.findWithDeleted(q, fields).exec(function(e, docs) {
+          if (e) return cb(e);
+          else if (!docs.length) return cb(null, slug);
+          else {
+            var max = docs.reduce(function(max, doc) {
+              var docSlug = doc.get(options.field, String);
+              var count = 1;
+              if (docSlug !== slug) {
+                count = docSlug.match(new RegExp((slugLimited ? slug.substr(0, slug.length - 2) : slug) + options.separator + '([0-9]+)$'));
+                count = ((count instanceof Array) ? parseInt(count[1]) : 0) + 1;
+              }
+              return (count > max) ? count : max;
+            }, 0);
 
-          if (max === 1) max++; // avoid slug-1, rather do slug-2
+            if (max === 1) max++; // avoid slug-1, rather do slug-2
 
-          var suffix = options.separator + max;
+            var suffix = options.separator + max;
 
-          if (options.maxLength) return cb(null, slug.substr(0, options.maxLength - suffix.length) + suffix);
-          else return cb(null, slug + suffix);
-        }
-      });
+            if (options.maxLength) return cb(null, slug.substr(0, options.maxLength - suffix.length) + suffix);
+            else return cb(null, slug + suffix);
+          }
+        });
+      } else {
+        model.find(q, fields).exec(function(e, docs) {
+          if (e) return cb(e);
+          else if (!docs.length) return cb(null, slug);
+          else {
+            var max = docs.reduce(function(max, doc) {
+              var docSlug = doc.get(options.field, String);
+              var count = 1;
+              if (docSlug !== slug) {
+                count = docSlug.match(new RegExp((slugLimited ? slug.substr(0, slug.length - 2) : slug) + options.separator + '([0-9]+)$'));
+                count = ((count instanceof Array) ? parseInt(count[1]) : 0) + 1;
+              }
+              return (count > max) ? count : max;
+            }, 0);
+
+            if (max === 1) max++; // avoid slug-1, rather do slug-2
+
+            var suffix = options.separator + max;
+
+            if (options.maxLength) return cb(null, slug.substr(0, options.maxLength - suffix.length) + suffix);
+            else return cb(null, slug + suffix);
+          }
+        });
+      }
     };
 
     schema.statics.findBySlug = function(slug, fields, additionalOptions, cb) {
