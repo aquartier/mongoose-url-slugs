@@ -148,6 +148,7 @@ module.exports = function(slugFields, options) {
       q[options.field] = new RegExp('^' + (slugLimited ? slug.substr(0, slug.length - 2) : slug));
       fields[options.field] = 1;
       if (typeof model.findWithDeleted === 'function') {
+         throw new Error ('FUCK YOU MAN. LOL')
          model.findWithDeleted(q, fields).exec(function(e, docs) {
           if (e) return cb(e);
           else if (!docs.length) return cb(null, slug);
